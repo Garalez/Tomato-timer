@@ -1,0 +1,1 @@
+import"../scss/index.scss";let count=0;const imp=["default","important","so-so"];document.querySelector(".button-importance").addEventListener("click",(t=>{let{target:e}=t;count+=1,count>=imp.length&&(count=0);for(let t=0;t<imp.length;t++)count===t?e.classList.add(imp[t]):e.classList.remove(imp[t])}));
