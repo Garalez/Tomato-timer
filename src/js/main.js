@@ -1,5 +1,6 @@
 /* eslint-disable max-len */
 import '../scss/index.scss';
+import './modules/class.js';
 
 let count = 0;
 const imp = ['default', 'important', 'so-so'];
