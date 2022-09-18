@@ -11,6 +11,7 @@ module.exports = {
   target,
   devtool,
   devServer: {
+    open: 'chrome',
     hot: true,
   },
   entry: ['@babel/polyfill', './src/js/main.js'],

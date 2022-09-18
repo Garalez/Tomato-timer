@@ -17,17 +17,3 @@ class Counter {
     this._title = text;
   }
 }
-const apple = new Counter('apple');
-
-console.log(apple);
-apple.title = 'asd';
-apple.id = '4';
-apple.counter = 4;
-apple.addCount();
-console.log(apple);
-
-apple.addCount();
-
-apple.changeTitle('qwe');
-console.log(apple);
-
