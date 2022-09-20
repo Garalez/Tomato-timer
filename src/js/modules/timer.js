@@ -1,4 +1,6 @@
 /* eslint-disable max-len */
+import {ControllerTomato} from './controllerTomato';
+import {RenderTomato} from './renderTomato';
 export class Tomato {
   constructor({
     taskTimer,
@@ -10,103 +12,116 @@ export class Tomato {
     pauseTimer: 5,
     bigPauseTimer: 15,
   }) {
+    if (Tomato.instance) {
+      return Tomato.instance;
+    }
     this.taskTimer = taskTimer;
     this.pauseTimer = pauseTimer;
     this.bigPauseTimer = bigPauseTimer;
     this.tasks = tasks;
     this.activeTask = null;
+    this.renderTomato = null;
+    Tomato.instance = this;
   }
 
-  taskTimerСountdown() {
-    let minutes = this.taskTimer;
-    let seconds = 60;
-    minutes -= 1;
-    const timerId = setInterval(() => {
-      seconds -= 1;
-      console.log(`Осталось времени на задачу: ${minutes} минут ${seconds} секунд`);
-      if (seconds < 1) {
-        minutes -= 1;
-        seconds = 60;
-      }
-      if (minutes <= -1) {
-        clearInterval(timerId);
-        this.tasksCounter(this.activeTask.id);
-        if (this.activeTask.count % 3) {
-          console.log(`Вы завершили ${this.activeTask.count} задач. Время на отдых: ${this.pauseTimer} мин.`);
-          this.restTimer(this.pauseTimer);
-        } else {
-          console.log(`Вы завершили ${this.activeTask.count} задачи. Время на отдых увеличилось до: ${this.bigPauseTimer} мин.`);
-          this.restTimer(this.bigPauseTimer);
-        }
-      }
-    }, 1000);
-  }
-
-  addTask(task) {
-    this.tasks.push(task);
+  addTask(taskTitle) {
+    const taskObj = {
+      id: Date.now().toString(),
+      title: taskTitle,
+      taskTimer: this.taskTimer,
+      pauseTimer: this.pauseTimer,
+      bigPauseTimer: this.bigPauseTimer,
+      importance: this.importance,
+      activeTask: this.activeTask,
+      count: 0,
+    };
+    this.tasks.push(taskObj);
+    this.renderTomato = new RenderTomato();
+    this.renderTomato.render(taskObj);
   }
 
   activateTask(id) {
-    this.activeTask = this.tasks.find(task => task.id === id.toString());
+    this.activeTask = this.tasks.find(task => {
+      if (task.id === id.toString()) {
+        task.activeTask = true;
+        return task;
+      }
+    });
+    this.renderTomato.activateTask(this.activeTask);
   }
 
-  startTask() {
-    if (!this.activeTask) {
-      console.log('Активируйте задачу');
+  deactivateTask(id) {
+    this.activeTask = this.tasks.find(task => {
+      if (task.id === id.toString()) {
+        task.activeTask = null;
+        return task;
+      }
+    });
+    this.renderTomato.deactivateTask(id);
+  }
+
+  updateTaskName(id, updatedTitle) {
+    this.tasks.find(task => {
+      if (task.id === id.toString()) {
+        task.title = updatedTitle;
+      }
+    });
+  }
+
+  removeTask(id) {
+    this.renderTomato.removeTask(id);
+    this.tasks.splice(this.tasks.findIndex(task => task.id === id.toString()), 1);
+  }
+
+  tasksCounter() {
+    this.renderTomato.taskTimer(this.activeTask.title, this.activeTask.taskTimer - 1);
+  }
+
+  restTimer() {
+    this.activeTask.count += 1;
+    this.renderTomato.increaseCount();
+    if (this.activeTask.count % 3) {
+      this.renderTomato.restTimer(+this.activeTask.pauseTimer - 1);
     } else {
-      console.log(`Выполняется задача: 
-      ${this.activeTask.title}, время на задачу ${this.taskTimer} мин.`);
-      this.taskTimerСountdown();
+      this.renderTomato.restTimer(+this.activeTask.bigPauseTimer - 1);
     }
-  }
-
-  tasksCounter(id) {
-    const task = this.tasks.find(task => task.id === id.toString());
-    task.count += 1;
-  }
-
-  restTimer(timer) {
-    let seconds = 60;
-    timer -= 1;
-    const timerId = setInterval(() => {
-      seconds -= 1;
-      console.log(`До конца отдыха осталось: ${timer} минут ${seconds} секунд`);
-      if (seconds < 1) {
-        timer -= 1;
-        seconds = 60;
-      }
-      if (timer <= -1) {
-        console.log('Время отдыха окончено');
-        clearInterval(timerId);
-        this.startTask();
-      }
-    }, 1000);
   }
 }
 
-const timer = new Tomato({
-  taskTimer: 1,
-  pauseTimer: 2,
-  bigPauseTimer: 5,
-});
+export class HighPriorityTask extends Tomato {
+  constructor(taskTimer, pauseTimer, bigPauseTimer, tasks) {
+    super(taskTimer, pauseTimer, bigPauseTimer, tasks);
+    this.importance = 'important';
+  }
+}
 
-timer.addTask({
-  id: '1',
-  title: 'Сходить в магазин',
-  count: 0,
-});
+export class StandardPriorityTask extends Tomato {
+  constructor(taskTimer, pauseTimer, bigPauseTimer, tasks) {
+    super(taskTimer, pauseTimer, bigPauseTimer, tasks);
+    this.importance = 'default';
+  }
+}
 
-timer.addTask({
-  id: '2',
-  title: 'Сходить в прачечную',
-  count: 0,
-});
+export class LowPriorityTask extends Tomato {
+  constructor(taskTimer, pauseTimer, bigPauseTimer, tasks) {
+    super(taskTimer, pauseTimer, bigPauseTimer, tasks);
+    this.importance = 'so-so';
+  }
+}
 
-timer.addTask({
-  id: '3',
-  title: 'Сходить в бассейн',
-  count: 0,
-});
+const addTaskBtn = document.querySelector('.task-form__add-button');
+const controller = new ControllerTomato();
 
-timer.activateTask(2);
-timer.startTask();
+addTaskBtn.addEventListener('click', event => {
+  event.preventDefault();
+  const taskName = document.querySelector('.task-name');
+  const importanceBtn = document.querySelector('.button-importance');
+
+  if (!taskName.value) {
+    alert('Введите название задачи!');
+    return;
+  }
+  const importance = importanceBtn.className.split(' ')[2];
+  controller.addTask(taskName.value, importance);
+  taskName.value = '';
+});

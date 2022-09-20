@@ -1,7 +1,7 @@
 /* eslint-disable max-len */
 import '../scss/index.scss';
 import './modules/class.js';
-import {Tomato} from './modules/timer';
+import './modules/timer';
 
 let count = 0;
 const imp = ['default', 'important', 'so-so'];
